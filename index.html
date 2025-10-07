@@ -37,12 +37,17 @@
       font-size:12px; text-transform:uppercase; letter-spacing:.04em;
       text-align:left; padding:8px 6px; border-bottom:1px solid var(--line);
     }
+    /* Header alignments */
+    .items thead th.num{ text-align:right; }   /* COST TOTAL header right */
+    .items thead th.qty{ text-align:center; }  /* QTY header centered */
+
     .items tbody td{
-      padding:8px 6px;                 /* was 12px → tighter */
-      border-bottom:1px solid #f2f2f2; /* subtle row separation */
+      padding:8px 6px;                 /* tighter rows */
+      border-bottom:1px solid #f2f2f2;
     }
     .items td.num{ text-align:right; white-space:nowrap; }
-    .items td.qty, .items thead th.qty{ text-align:center; } /* center qty */
+    .items td.qty{ text-align:center; white-space:nowrap; }
+    .items td.price{ text-align:left; white-space:nowrap; } /* Price / Hourly Rate LEFT */
 
     /* Totals cards */
     .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; text-align:center }
@@ -116,8 +121,8 @@
         <thead>
           <tr>
             <th>Task Title</th>
-            <th class="num">Price / Hourly Rate</th>
-            <th class="qty">Cost Qty</th>   <!-- centered -->
+            <th>Price / Hourly Rate</th>
+            <th class="qty">Cost Qty</th>
             <th class="num">Cost Total</th>
           </tr>
         </thead>
@@ -222,7 +227,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${esc(it.title)}</td>
-        <td class="num">${money(it.price)}</td>
+        <td class="price">${money(it.price)}</td>
         <td class="qty">${(it.qty ?? 0).toLocaleString()}</td>
         <td class="num">${money(it.total)}</td>`;
       tbody.appendChild(tr);
