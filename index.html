@@ -16,35 +16,49 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       font-size:14px;
     }
+    a,a:visited,a:hover,a:active{ color:#000; text-decoration:none; }
+
     .sheet{ max-width:1024px; margin:20px auto; padding:20px; }
     header{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start }
     .title{ font-weight:700; font-size:24px; margin:0 0 6px }
-    .date{ font-size:12px; }                     /* black now */
+    .date{ font-size:12px; }
     .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:13px }
-    .label{ color:var(--text) }                  /* black labels */
+    .label{ color:var(--text) }
     .brand{ display:flex; gap:10px; align-items:center; }
     .logo-box{ width:56px; height:56px; display:grid; place-items:center }
     .company-name{ font-weight:700; font-size:18px; margin:0 }
 
     h3{ margin:24px 0 10px; font-size:18px }
 
-    /* Cards / totals */
+    /* Items table */
+    .items-wrap{ margin-top:8px }
+    table.items{ width:100%; border-collapse:collapse; }
+    .items thead th{
+      font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+      text-align:left; padding:10px 8px; border-bottom:1px solid var(--line);
+    }
+    .items tbody td{
+      padding:12px 8px; border-bottom:1px solid #f2f2f2;
+    }
+    .items td.num{ text-align:right; white-space:nowrap; }
+
+    /* Totals cards */
     .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; text-align:center }
     .card h4{ margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.04em }
     .value{ font-size:18px; font-weight:700 }
-    .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px }
-    .stack{ display:grid; gap:16px }             /* left column: subtotal then taxes */
-    .tall{ display:grid; align-content:center; row-gap:6px } /* right column: total only */
+    .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px }
+    .stack{ display:grid; gap:16px }
+    .tall{ display:grid; align-content:center; row-gap:6px }
 
-    /* Footer: aligned under right column */
+    /* Footer aligned under right column */
     .footer-grid{ display:grid; grid-template-columns:1fr 1fr; margin-top:16px }
     .right-sign{ display:grid; justify-items:center; row-gap:10px }
-    .thanks{ font-weight:600 }                   /* black now */
+    .thanks{ font-weight:600 }
     .signature{ height:72px; width:220px; display:grid; place-items:center }
-    .signature img{ max-width:100%; max-height:72px; object-fit:contain } /* smaller & no border */
+    .signature img{ max-width:100%; max-height:72px; object-fit:contain }
     .signer{ font-size:12px; text-align:center }
 
-    /* PRINT sizing */
+    /* Print */
     @page { size: A4; margin: 16mm; }
     @media print {
       html, body { height: auto !important; }
@@ -93,10 +107,23 @@
       </div>
     </header>
 
-    <!-- Items title only -->
+    <!-- Items -->
     <h3>Description of the Work</h3>
+    <div class="items-wrap">
+      <table class="items">
+        <thead>
+          <tr>
+            <th>Task Title</th>
+            <th class="num">Price / Hourly Rate</th>
+            <th class="num">Cost Qty</th>
+            <th class="num">Cost Total</th>
+          </tr>
+        </thead>
+        <tbody id="items_body"></tbody>
+      </table>
+    </div>
 
-    <!-- Totals: left stack (subtotal + taxes), right single (total) -->
+    <!-- Totals -->
     <div class="totals2">
       <div class="stack">
         <div class="card">
@@ -115,7 +142,7 @@
       </div>
     </div>
 
-    <!-- Footer: aligned with right column (below total) -->
+    <!-- Footer under right column -->
     <div class="footer-grid">
       <div></div>
       <div class="right-sign">
@@ -127,21 +154,21 @@
   </div>
 
   <script>
-    // Helpers
+    // ---- helpers
     const qp = new URLSearchParams(location.search);
     const get = (k, d='') => qp.get(k) ?? d;
     const ccy = get('ccy','AUD');
     const clean = v => { if(v==null||v==='') return 0; const n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; };
     const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
     const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
+    const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    // Header
+    // ---- title, date
     const invNum = get('invoice_number','');
     document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
     document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
 
-    // Date formatting: "Date: 28 October 2025"
-    (function(){
+    (function formatDate(){
       const raw = get('invoice_date','');
       let out = raw;
       const d = new Date(raw);
@@ -153,44 +180,79 @@
       if (out) document.getElementById('invoice_date').textContent = `Date: ${out}`;
     })();
 
-    // Client
-    ['client_name','client_business_number','client_phone','client_email','invoice_description']
-      .forEach(k => fill(k,k));
+    // ---- client/company/bank
+    ['client_name','client_business_number','client_phone','client_email','invoice_description',
+     'from_name','from_business_no','from_address','from_phone','from_email','from_web',
+     'bank_name','bank_acc_name','bank_acc_no','bank_routing'
+    ].forEach(k => fill(k,k));
 
-    // Company + bank
-    ['from_name','from_business_no','from_address','from_phone','from_email','from_web',
-     'bank_name','bank_acc_name','bank_acc_no','bank_routing']
-      .forEach(k => fill(k,k));
-
-    // Logo (optional)
+    // logo (optional)
     const logo = get('from_logo','');
     if (logo) {
-      const box = document.getElementById('from_logo_box');
-      box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">`;
+      document.getElementById('from_logo_box').innerHTML =
+        `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">`;
     }
 
-    // Totals
+    // ---- items: split "row||row" and "title::price::qty::total"
+    function parseItems(str){
+      if(!str) return [];
+      const rowSep = /(\|\||%7C%7C)/i;       // || or URL-encoded
+      const colSep = /(::|%3A%3A)/i;         // :: or URL-encoded
+      return str.split(rowSep).filter(s => !rowSep.test(s) && s !== '')
+        .map(row => {
+          const fields = row.split(colSep).filter(s => !colSep.test(s));
+          const [title='', price='', qty='', total=''] = fields;
+          return {
+            title: decodeURIComponent(title || ''),
+            price: clean(price),
+            qty:   parseFloat(qty || 0) || 0,
+            total: clean(total)
+          };
+        });
+    }
+
+    const items = parseItems(get('items',''));
+    const tbody = document.getElementById('items_body');
+    let subtotalFromItems = 0;
+
+    items.forEach(it => {
+      subtotalFromItems += it.total || 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(it.title)}</td>
+        <td class="num">${money(it.price)}</td>
+        <td class="num">${(it.qty ?? 0).toLocaleString()}</td>
+        <td class="num">${money(it.total)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    // ---- totals (auto if missing)
     let subtotal = clean(get('subtotal',''));
+    if (!subtotal && subtotalFromItems) subtotal = subtotalFromItems;
+
     let taxRate = get('tax_rate','');
-    taxRate = taxRate === '' ? '' : Number(taxRate);
+    taxRate = taxRate === '' ? '' : Number(String(taxRate).replace('%',''));
     if (taxRate && taxRate > 1) taxRate = taxRate / 100;
+
     let taxes = clean(get('taxes',''));
     if (!taxes && typeof taxRate === 'number' && !isNaN(taxRate)) taxes = subtotal * taxRate;
+
     let grand = clean(get('grand_total',''));
     if (!grand) grand = subtotal + taxes;
 
     document.getElementById('subtotal').textContent = money(subtotal);
     document.getElementById('taxes').textContent = money(taxes);
-    document.getElementById('tax_rate_label').textContent = (taxRate||taxRate===0)?`(${(taxRate*100).toFixed(0)}%)`:'';
+    document.getElementById('tax_rate_label').textContent =
+      (taxRate || taxRate===0) ? `(${(taxRate*100).toFixed(0)}%)` : '';
     document.getElementById('grand_total').textContent = money(grand);
 
-    // Signature
+    // ---- signature
     const sig = get('signature','');
     if (sig) document.getElementById('signature').src = sig;
     const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
     if (signer) document.getElementById('signer').textContent = signer;
 
-    // Auto-print on load (optional)
+    // ---- auto-print (optional)
     window.addEventListener('load', () => { try { setTimeout(() => window.print(), 0); } catch {} });
   </script>
 </body>
