@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <style>
-    :root{ --bg:#fff; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb; }
+    :root{ --bg:#fff; --text:#0f172a; --line:#e5e7eb; }
     *{ box-sizing:border-box }
     html,body{ height:100% }
     body{
@@ -18,30 +18,31 @@
     }
     .sheet{ max-width:1024px; margin:20px auto; padding:20px; }
     header{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start }
-    .title{ font-weight:700; font-size:24px; margin:0 0 6px }   /* smaller */
-    .date{ color:var(--muted); font-size:12px; }
-    .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:13px } /* smaller */
-    .label{ color:var(--muted) }
+    .title{ font-weight:700; font-size:24px; margin:0 0 6px }
+    .date{ font-size:12px; }                     /* black now */
+    .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:13px }
+    .label{ color:var(--text) }                  /* black labels */
     .brand{ display:flex; gap:10px; align-items:center; }
-    .logo-box{ width:56px; height:56px; border-radius:12px; background:#eef2ff; display:grid; place-items:center; font-weight:700; color:#1d4ed8 }
-    .company-name{ font-weight:700; font-size:18px; margin:0 } /* decreased */
+    .logo-box{ width:56px; height:56px; display:grid; place-items:center }
+    .company-name{ font-weight:700; font-size:18px; margin:0 }
+
     h3{ margin:24px 0 10px; font-size:18px }
 
     /* Cards / totals */
-    .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fafafa }
-    .card h4{ margin:0 0 6px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em }
-    .value{ font-size:18px; font-weight:700 }                   /* a bit smaller */
-
+    .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; text-align:center }
+    .card h4{ margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.04em }
+    .value{ font-size:18px; font-weight:700 }
     .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px }
-    .stack{ display:grid; gap:16px }                            /* left column: subtotal then taxes */
-    .tall{ display:grid; align-content:center; row-gap:6px }    /* right column: total only */
+    .stack{ display:grid; gap:16px }             /* left column: subtotal then taxes */
+    .tall{ display:grid; align-content:center; row-gap:6px } /* right column: total only */
 
-    /* Footer: signature under "Thank you!" */
-    .footer{ display:grid; justify-items:center; margin-top:16px; row-gap:10px }
-    .thanks{ color:var(--muted); font-weight:600 }
-    .signature{ border:1px dashed var(--line); border-radius:10px; height:84px; width:240px; display:grid; place-items:center; background:#fff }
-    .signature img{ max-width:92%; max-height:70px; object-fit:contain } /* forces smaller image */
-    .signer{ font-size:12px; color:var(--muted); text-align:center }
+    /* Footer: aligned under right column */
+    .footer-grid{ display:grid; grid-template-columns:1fr 1fr; margin-top:16px }
+    .right-sign{ display:grid; justify-items:center; row-gap:10px }
+    .thanks{ font-weight:600 }                   /* black now */
+    .signature{ height:72px; width:220px; display:grid; place-items:center }
+    .signature img{ max-width:100%; max-height:72px; object-fit:contain } /* smaller & no border */
+    .signer{ font-size:12px; text-align:center }
 
     /* PRINT sizing */
     @page { size: A4; margin: 16mm; }
@@ -71,8 +72,8 @@
       <!-- RIGHT: Company -->
       <div>
         <div class="brand" style="margin-bottom:6px">
-          <div class="logo-box" id="from_logo_box">LOGO</div>
-          <div class="company-name" id="from_name"></div> <!-- smaller company name -->
+          <div class="logo-box" id="from_logo_box"></div>
+          <div class="company-name" id="from_name"></div>
         </div>
 
         <div class="meta">
@@ -114,11 +115,14 @@
       </div>
     </div>
 
-    <!-- Footer: centered; signature below "Thank you!" -->
-    <div class="footer">
-      <div class="thanks">Thank you!</div>
-      <div class="signature"><img id="signature" alt=""></div>
-      <div class="signer" id="signer"></div>
+    <!-- Footer: aligned with right column (below total) -->
+    <div class="footer-grid">
+      <div></div>
+      <div class="right-sign">
+        <div class="thanks">Thank you!</div>
+        <div class="signature"><img id="signature" alt=""></div>
+        <div class="signer" id="signer"></div>
+      </div>
     </div>
   </div>
 
@@ -135,7 +139,19 @@
     const invNum = get('invoice_number','');
     document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
     document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
-    fill('invoice_date','invoice_date');
+
+    // Date formatting: "Date: 28 October 2025"
+    (function(){
+      const raw = get('invoice_date','');
+      let out = raw;
+      const d = new Date(raw);
+      if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2,'0');
+        const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+        out = `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      }
+      if (out) document.getElementById('invoice_date').textContent = `Date: ${out}`;
+    })();
 
     // Client
     ['client_name','client_business_number','client_phone','client_email','invoice_description']
@@ -146,12 +162,11 @@
      'bank_name','bank_acc_name','bank_acc_no','bank_routing']
       .forEach(k => fill(k,k));
 
-    // Logo
+    // Logo (optional)
     const logo = get('from_logo','');
     if (logo) {
       const box = document.getElementById('from_logo_box');
-      box.style.background='transparent';
-      box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;">`;
+      box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">`;
     }
 
     // Totals
