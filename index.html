@@ -30,5 +30,12 @@
     const inv = q.get("invoice_number");
     if (inv) document.title = "Invoice " + inv;
   </script>
+
+  <script>
+  window.addEventListener('load', () => {
+    try { window.print(); } catch {}
+  });
+</script>
+
 </body>
 </html>
