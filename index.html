@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <title>Invoice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <style>
     :root{ --bg:#fff; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb; }
     *{ box-sizing:border-box }
@@ -16,7 +19,6 @@
     header{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start }
     .title{ font-weight:700; font-size:28px; margin:0 0 6px }
     .date{ color:var(--muted); font-size:13px; }
-    .block{ padding:0; }
     .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:14px }
     .label{ color:var(--muted) }
     .brand{ display:flex; gap:12px; align-items:center; }
@@ -31,27 +33,37 @@
     .thanks{ justify-self:end; color:var(--muted); font-weight:600 }
     .signature{ border:1px dashed var(--line); border-radius:12px; height:160px; display:grid; place-items:center; background:#fff }
     .signature img{ max-width:92%; max-height:140px; object-fit:contain }
-    .signer{ font-size:12px; color:var(--muted); text-align:right; margin-top:8px }
 
-    /* Print */
-    @page { size:A4; margin:12mm; }
-    @media print { .sheet{ margin:0; padding:0 } }
+    /* ===== PRINT SIZING =====
+       Adjust margins to change overall scale. For A4:
+       - margin 16mm  => .sheet width 178mm (210 - 16 - 16)
+       - margin 18mm  => .sheet width 174mm
+       - margin 20mm  => .sheet width 170mm
+    */
+    @page { size: A4; margin: 16mm; }
+    @media print {
+      html, body { height: auto !important; }
+      .sheet {
+        width: 178mm;
+        margin: 0 auto !important;
+        padding: 0 !important;
+      }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body>
   <div class="sheet">
     <header>
       <div>
-        <div class="date" id="invoice_date"> </div>
+        <div class="date" id="invoice_date"></div>
         <h1 class="title" id="inv_title">Invoice</h1>
-        <div class="block">
-          <div class="meta">
-            <div class="label">Client</div> <div id="client_name"></div>
-            <div class="label">ABN / ID</div> <div id="client_business_number"></div>
-            <div class="label">Phone</div> <div id="client_phone"></div>
-            <div class="label">Email</div> <div id="client_email"></div>
-            <div class="label">Work</div> <div id="invoice_description"></div>
-          </div>
+        <div class="meta" style="margin-top:8px">
+          <div class="label">Client</div> <div id="client_name"></div>
+          <div class="label">ABN / ID</div> <div id="client_business_number"></div>
+          <div class="label">Phone</div> <div id="client_phone"></div>
+          <div class="label">Email</div> <div id="client_email"></div>
+          <div class="label">Work</div> <div id="invoice_description"></div>
         </div>
       </div>
 
@@ -59,9 +71,9 @@
         <div class="brand" style="margin-bottom:8px">
           <div class="logo-box" id="from_logo_box">LOGO</div>
           <div>
-            <div class="title" id="from_name"> </div>
-            <div class="label" id="from_business_no"> </div>
-            <div class="label" id="from_address"> </div>
+            <div class="title" id="from_name"></div>
+            <div class="label" id="from_business_no"></div>
+            <div class="label" id="from_address"></div>
             <div class="label">Phone: <span id="from_phone"></span></div>
             <div class="label">Email: <span id="from_email"></span></div>
             <div class="label">Web: <span id="from_web"></span></div>
@@ -77,7 +89,7 @@
       </div>
     </header>
 
-    <!-- Only the title for the items section (no table) -->
+    <!-- Only the title for the items section (no table yet) -->
     <h3>Description of the Work</h3>
 
     <div class="kpis">
@@ -103,37 +115,36 @@
       <div class="thanks">Thank you!</div>
       <div>
         <div class="signature"><img id="signature" alt=""></div>
-        <div class="signer" id="signer"> </div>
+        <div class="label" id="signer" style="text-align:right; margin-top:8px;"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // Helpers
+    // ------- helpers -------
     const qp = new URLSearchParams(location.search);
     const get = (k, d='') => qp.get(k) ?? d;
     const ccy = get('ccy','AUD');
     const clean = v => { if(v==null||v==='') return 0; const n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; };
     const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
-
     const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
 
-    // Header
+    // ------- header -------
     const invNum = get('invoice_number','');
     document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
     document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
     fill('invoice_date','invoice_date');
 
-    // Client
+    // ------- client -------
     ['client_name','client_business_number','client_phone','client_email','invoice_description']
       .forEach(k => fill(k,k));
 
-    // Company + bank
+    // ------- company + bank -------
     ['from_name','from_business_no','from_address','from_phone','from_email','from_web',
      'bank_name','bank_acc_name','bank_acc_no','bank_routing']
       .forEach(k => fill(k,k));
 
-    // Logo
+    // logo (optional)
     const logo = get('from_logo','');
     if (logo) {
       const box = document.getElementById('from_logo_box');
@@ -141,7 +152,7 @@
       box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;">`;
     }
 
-    // Totals
+    // ------- totals -------
     let subtotal = clean(get('subtotal',''));
     let taxRate = get('tax_rate','');
     taxRate = taxRate === '' ? '' : Number(taxRate);
@@ -156,13 +167,13 @@
     document.getElementById('tax_rate_label').textContent = (taxRate||taxRate===0)?`(${(taxRate*100).toFixed(0)}%)`:'';
     document.getElementById('grand_total').textContent = money(grand);
 
-    // Signature
+    // signature
     const sig = get('signature','');
     if (sig) document.getElementById('signature').src = sig;
     const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
     if (signer) document.getElementById('signer').textContent = signer;
 
-    // Auto-print on load (optional)
+    // auto-print on load (optional)
     window.addEventListener('load', () => { try { setTimeout(() => window.print(), 0); } catch {} });
   </script>
 </body>
