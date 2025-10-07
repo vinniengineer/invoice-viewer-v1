@@ -28,37 +28,40 @@
     .logo-box{ width:56px; height:56px; display:grid; place-items:center }
     .company-name{ font-weight:700; font-size:18px; margin:0 }
 
-    h3{ margin:20px 0 8px; font-size:18px }
+    /* visual line break inside meta grids */
+    .break { height:8px }
+    .break + .break { height:8px } /* keep grid balanced (two cols) */
 
-    /* Items table (tighter spacing) */
-    .items-wrap{ margin-top:6px }
+    h3{ margin:20px 0 10px; font-size:18px }
+
+    /* Items table */
+    .items-wrap{ margin-top:8px }
     table.items{ width:100%; border-collapse:collapse; }
     .items thead th{
       font-size:12px; text-transform:uppercase; letter-spacing:.04em;
-      text-align:left; padding:8px 6px; border-bottom:1px solid var(--line);
+      padding:6px 8px; border-bottom:1px solid var(--line);
     }
-    /* Header alignments */
-    .items thead th.num{ text-align:right; }   /* COST TOTAL header right */
-    .items thead th.qty{ text-align:center; }  /* QTY header centered */
-
+    .items thead th:first-child{ text-align:left; }
+    .items thead th.num{ text-align:right; }
+    .items thead th.num-left{ text-align:left; }   /* for Price header */
     .items tbody td{
-      padding:8px 6px;                 /* tighter rows */
+      padding:8px 8px;       /* a bit tighter to fit more rows */
       border-bottom:1px solid #f2f2f2;
+      vertical-align:middle;
     }
     .items td.num{ text-align:right; white-space:nowrap; }
-    .items td.qty{ text-align:center; white-space:nowrap; }
-    .items td.price{ text-align:left; white-space:nowrap; } /* Price / Hourly Rate LEFT */
+    .items td.qty{ text-align:center; }
 
     /* Totals cards */
     .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fff; text-align:center }
     .card h4{ margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.04em }
     .value{ font-size:18px; font-weight:700 }
-    .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px }
-    .stack{ display:grid; gap:14px }
+    .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px }
+    .stack{ display:grid; gap:16px }
     .tall{ display:grid; align-content:center; row-gap:6px }
 
     /* Footer aligned under right column */
-    .footer-grid{ display:grid; grid-template-columns:1fr 1fr; margin-top:14px }
+    .footer-grid{ display:grid; grid-template-columns:1fr 1fr; margin-top:16px }
     .right-sign{ display:grid; justify-items:center; row-gap:10px }
     .thanks{ font-weight:600 }
     .signature{ height:72px; width:220px; display:grid; place-items:center }
@@ -86,6 +89,10 @@
           <div class="label">Business N.</div>    <div id="client_business_number"></div>
           <div class="label">Phone</div>         <div id="client_phone"></div>
           <div class="label">Email</div>         <div id="client_email"></div>
+
+          <!-- visual <br> under client email before Work -->
+          <div class="break"></div>              <div class="break"></div>
+
           <div class="label">Work</div>          <div id="invoice_description"></div>
         </div>
       </div>
@@ -105,7 +112,7 @@
           <div class="label">Web</div>           <div id="from_web"></div>
         </div>
 
-        <div class="meta" style="margin-top:10px">
+        <div class="meta" id="bank_block" style="margin-top:10px">
           <div class="label">Bank</div>          <div id="bank_name"></div>
           <div class="label">Acc Name</div>      <div id="bank_acc_name"></div>
           <div class="label">Acc No.</div>       <div id="bank_acc_no"></div>
@@ -121,8 +128,8 @@
         <thead>
           <tr>
             <th>Task Title</th>
-            <th>Price / Hourly Rate</th>
-            <th class="qty">Cost Qty</th>
+            <th class="num-left">Price / Hourly Rate</th>
+            <th class="num">Cost Qty</th>
             <th class="num">Cost Total</th>
           </tr>
         </thead>
@@ -152,7 +159,7 @@
     <!-- Footer under right column -->
     <div class="footer-grid">
       <div></div>
-      <div class="right-sign">
+      <div class="right-sign" id="sign_block">
         <div class="thanks">Thank you!</div>
         <div class="signature"><img id="signature" alt=""></div>
         <div class="signer" id="signer"></div>
@@ -165,10 +172,35 @@
     const qp = new URLSearchParams(location.search);
     const get = (k, d='') => qp.get(k) ?? d;
     const ccy = get('ccy','AUD');
-    const clean = v => { if(v==null||v==='') return 0; const n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; };
+
+    const clean = v => {
+      if(v==null||v==='') return 0;
+      const n = parseFloat(String(v).replace(/[^0-9.-]/g,''));
+      return isNaN(n)?0:n;
+    };
     const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
-    const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
     const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+    // fill or hide label+value if empty
+    function fillOrHide(valueId, qpKey) {
+      const v = (get(qpKey, '') || '').trim();
+      const el = document.getElementById(valueId);
+      if (!el) return;
+
+      if (v) {
+        el.textContent = v;
+        el.style.display = '';
+        if (el.previousElementSibling && el.previousElementSibling.classList.contains('label')) {
+          el.previousElementSibling.style.display = '';
+        }
+      } else {
+        el.textContent = '';
+        el.style.display = 'none';
+        if (el.previousElementSibling && el.previousElementSibling.classList.contains('label')) {
+          el.previousElementSibling.style.display = 'none';
+        }
+      }
+    }
 
     // ---- title, date
     const invNum = get('invoice_number','');
@@ -187,14 +219,36 @@
       if (out) document.getElementById('invoice_date').textContent = `Date: ${out}`;
     })();
 
-    // ---- client/company/bank
-    ['client_name','client_business_number','client_phone','client_email','invoice_description',
-     'from_name','from_business_no','from_address','from_phone','from_email','from_web',
-     'bank_name','bank_acc_name','bank_acc_no','bank_routing'
-    ].forEach(k => fill(k,k));
+    // ---- client (show/hide when empty)
+    fillOrHide('client_name','client_name');
+    fillOrHide('client_business_number','client_business_number');
+    fillOrHide('client_phone','client_phone');
+    fillOrHide('client_email','client_email');
+    fillOrHide('invoice_description','invoice_description');
+
+    // ---- company + bank (show/hide when empty)
+    fillOrHide('from_name','from_name');
+    fillOrHide('from_business_no','from_business_no');
+    fillOrHide('from_address','from_address');
+    fillOrHide('from_phone','from_phone');
+    fillOrHide('from_email','from_email');
+    fillOrHide('from_web','from_web');
+
+    fillOrHide('bank_name','bank_name');
+    fillOrHide('bank_acc_name','bank_acc_name');
+    fillOrHide('bank_acc_no','bank_acc_no');
+    fillOrHide('bank_routing','bank_routing');
+
+    // If all bank fields are hidden, hide the entire bank block
+    (function maybeHideBankBlock(){
+      const block = document.getElementById('bank_block');
+      if (!block) return;
+      const visible = Array.from(block.children).some(el => el.style.display !== 'none');
+      if (!visible) block.style.display = 'none';
+    })();
 
     // logo (optional)
-    const logo = get('from_logo','');
+    const logo = get('from_logo','').trim();
     if (logo) {
       document.getElementById('from_logo_box').innerHTML =
         `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;">`;
@@ -227,7 +281,7 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${esc(it.title)}</td>
-        <td class="price">${money(it.price)}</td>
+        <td class="num-left">${money(it.price)}</td>
         <td class="qty">${(it.qty ?? 0).toLocaleString()}</td>
         <td class="num">${money(it.total)}</td>`;
       tbody.appendChild(tr);
@@ -253,17 +307,24 @@
       (taxRate || taxRate===0) ? `(${(taxRate*100).toFixed(0)}%)` : '';
     document.getElementById('grand_total').textContent = money(grand);
 
-    // ---- signature
-    const sig = get('signature','');
-    if (sig) document.getElementById('signature').src = sig;
-    const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
-    if (signer) document.getElementById('signer').textContent = signer;
+    // ---- signature (hide block if both missing)
+    const sig = get('signature','').trim();
+    const signerText = [get('signer_name','').trim(), get('signer_role','').trim()].filter(Boolean).join(' · ');
 
-    // ---- auto-print when ?print=1
-    const shouldPrint = get('print','0') === '1';
-    window.addEventListener('load', () => {
-      if (shouldPrint) setTimeout(() => window.print(), 200);
-    });
+    if (sig) document.getElementById('signature').src = sig;
+    if (signerText) document.getElementById('signer').textContent = signerText;
+    if (!sig && !signerText) {
+      const signBlock = document.getElementById('sign_block');
+      if (signBlock) signBlock.style.display = 'none';
+    }
+
+    // ---- auto-print when print=1 or print=true
+    const autoPrint = /^(1|true)$/i.test(get('print','').trim());
+    if (autoPrint) {
+      window.addEventListener('load', () => {
+        try { setTimeout(() => window.print(), 0); } catch {}
+      });
+    }
   </script>
 </body>
 </html>
