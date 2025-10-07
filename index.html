@@ -4,40 +4,166 @@
   <meta charset="utf-8" />
   <title>Invoice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{ --bg:#fff; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb; }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    }
+    .sheet{ max-width:1024px; margin:20px auto; padding:20px; }
+    header{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start }
+    .title{ font-weight:700; font-size:28px; margin:0 0 6px }
+    .date{ color:var(--muted); font-size:13px; }
+    .block{ padding:0; }
+    .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:14px }
+    .label{ color:var(--muted) }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .logo-box{ width:64px; height:64px; border-radius:12px; background:#eef2ff; display:grid; place-items:center; font-weight:700; color:#1d4ed8 }
+    h3{ margin:26px 0 10px; font-size:20px }
+    .kpis{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px }
+    .totals{ display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-top:12px }
+    .card{ border:1px solid var(--line); border-radius:12px; padding:14px; background:#fafafa }
+    .card h4{ margin:0 0 6px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em }
+    .value{ font-size:20px; font-weight:700 }
+    .footer{ display:grid; grid-template-columns:1fr 240px; gap:16px; align-items:end; margin-top:12px }
+    .thanks{ justify-self:end; color:var(--muted); font-weight:600 }
+    .signature{ border:1px dashed var(--line); border-radius:12px; height:160px; display:grid; place-items:center; background:#fff }
+    .signature img{ max-width:92%; max-height:140px; object-fit:contain }
+    .signer{ font-size:12px; color:var(--muted); text-align:right; margin-top:8px }
+
+    /* Print */
+    @page { size:A4; margin:12mm; }
+    @media print { .sheet{ margin:0; padding:0 } }
+  </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height:1.6; margin:16px;">
-  <div id="cname">Client: </div>
-  <div id="cabn">ABN / ID: </div>
-  <div id="cphone">Phone: </div>
-  <div id="cemail">Email: </div>
-  <div id="cwork">Work: </div>
+<body>
+  <div class="sheet">
+    <header>
+      <div>
+        <div class="date" id="invoice_date"> </div>
+        <h1 class="title" id="inv_title">Invoice</h1>
+        <div class="block">
+          <div class="meta">
+            <div class="label">Client</div> <div id="client_name"></div>
+            <div class="label">ABN / ID</div> <div id="client_business_number"></div>
+            <div class="label">Phone</div> <div id="client_phone"></div>
+            <div class="label">Email</div> <div id="client_email"></div>
+            <div class="label">Work</div> <div id="invoice_description"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="brand" style="margin-bottom:8px">
+          <div class="logo-box" id="from_logo_box">LOGO</div>
+          <div>
+            <div class="title" id="from_name"> </div>
+            <div class="label" id="from_business_no"> </div>
+            <div class="label" id="from_address"> </div>
+            <div class="label">Phone: <span id="from_phone"></span></div>
+            <div class="label">Email: <span id="from_email"></span></div>
+            <div class="label">Web: <span id="from_web"></span></div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <div class="label">Bank</div> <div id="bank_name"></div>
+          <div class="label">Acc Name</div> <div id="bank_acc_name"></div>
+          <div class="label">Acc No.</div> <div id="bank_acc_no"></div>
+          <div class="label">Routing</div> <div id="bank_routing"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Only the title for the items section (no table) -->
+    <h3>Description of the Work</h3>
+
+    <div class="kpis">
+      <div class="card">
+        <h4>Subtotal Invoice</h4>
+        <div class="value" id="subtotal">$0.00</div>
+      </div>
+      <div class="card">
+        <h4>Taxes</h4>
+        <div class="value"><span id="taxes">$0.00</span> <span class="label" id="tax_rate_label"></span></div>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div></div>
+      <div class="card">
+        <h4>Total Invoice</h4>
+        <div class="value" id="grand_total">$0.00</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="thanks">Thank you!</div>
+      <div>
+        <div class="signature"><img id="signature" alt=""></div>
+        <div class="signer" id="signer"> </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Fill from URL params
-    const q = new URLSearchParams(location.search);
-    const set = (id, key) => {
-      const el = document.getElementById(id);
-      const v = q.get(key) || "";
-      if (v) el.textContent = el.textContent + v;
-    };
-    set("cname","client_name");
-    set("cabn","client_business_number");
-    set("cphone","client_phone");
-    set("cemail","client_email");
-    set("cwork","invoice_description");
+    // Helpers
+    const qp = new URLSearchParams(location.search);
+    const get = (k, d='') => qp.get(k) ?? d;
+    const ccy = get('ccy','AUD');
+    const clean = v => { if(v==null||v==='') return 0; const n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; };
+    const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
 
-    const inv = q.get("invoice_number");
-    if (inv) document.title = "Invoice " + inv;
-  </script>
+    const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
 
-  <!-- Auto-print on load -->
-  <script>
-    (function () {
-      function go() { try { window.print(); } catch(e) {} }
-      if (document.readyState === "complete") setTimeout(go, 0);
-      else window.addEventListener("load", () => setTimeout(go, 0));
-    })();
+    // Header
+    const invNum = get('invoice_number','');
+    document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
+    document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
+    fill('invoice_date','invoice_date');
+
+    // Client
+    ['client_name','client_business_number','client_phone','client_email','invoice_description']
+      .forEach(k => fill(k,k));
+
+    // Company + bank
+    ['from_name','from_business_no','from_address','from_phone','from_email','from_web',
+     'bank_name','bank_acc_name','bank_acc_no','bank_routing']
+      .forEach(k => fill(k,k));
+
+    // Logo
+    const logo = get('from_logo','');
+    if (logo) {
+      const box = document.getElementById('from_logo_box');
+      box.style.background='transparent';
+      box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;">`;
+    }
+
+    // Totals
+    let subtotal = clean(get('subtotal',''));
+    let taxRate = get('tax_rate','');
+    taxRate = taxRate === '' ? '' : Number(taxRate);
+    if (taxRate && taxRate > 1) taxRate = taxRate / 100;
+    let taxes = clean(get('taxes',''));
+    if (!taxes && typeof taxRate === 'number' && !isNaN(taxRate)) taxes = subtotal * taxRate;
+    let grand = clean(get('grand_total',''));
+    if (!grand) grand = subtotal + taxes;
+
+    document.getElementById('subtotal').textContent = money(subtotal);
+    document.getElementById('taxes').textContent = money(taxes);
+    document.getElementById('tax_rate_label').textContent = (taxRate||taxRate===0)?`(${(taxRate*100).toFixed(0)}%)`:'';
+    document.getElementById('grand_total').textContent = money(grand);
+
+    // Signature
+    const sig = get('signature','');
+    if (sig) document.getElementById('signature').src = sig;
+    const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
+    if (signer) document.getElementById('signer').textContent = signer;
+
+    // Auto-print on load (optional)
+    window.addEventListener('load', () => { try { setTimeout(() => window.print(), 0); } catch {} });
   </script>
 </body>
 </html>
-
