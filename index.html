@@ -34,20 +34,11 @@
     .signature{ border:1px dashed var(--line); border-radius:12px; height:160px; display:grid; place-items:center; background:#fff }
     .signature img{ max-width:92%; max-height:140px; object-fit:contain }
 
-    /* ===== PRINT SIZING =====
-       Adjust margins to change overall scale. For A4:
-       - margin 16mm  => .sheet width 178mm (210 - 16 - 16)
-       - margin 18mm  => .sheet width 174mm
-       - margin 20mm  => .sheet width 170mm
-    */
+    /* PRINT sizing */
     @page { size: A4; margin: 16mm; }
     @media print {
       html, body { height: auto !important; }
-      .sheet {
-        width: 178mm;
-        margin: 0 auto !important;
-        padding: 0 !important;
-      }
+      .sheet { width: 178mm; margin: 0 auto !important; padding: 0 !important; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
@@ -55,41 +46,44 @@
 <body>
   <div class="sheet">
     <header>
+      <!-- LEFT: Client -->
       <div>
         <div class="date" id="invoice_date"></div>
         <h1 class="title" id="inv_title">Invoice</h1>
         <div class="meta" style="margin-top:8px">
-          <div class="label">Client</div> <div id="client_name"></div>
-          <div class="label">ABN / ID</div> <div id="client_business_number"></div>
-          <div class="label">Phone</div> <div id="client_phone"></div>
-          <div class="label">Email</div> <div id="client_email"></div>
-          <div class="label">Work</div> <div id="invoice_description"></div>
+          <div class="label">Client</div>        <div id="client_name"></div>
+          <div class="label">ABN / ID</div>      <div id="client_business_number"></div>
+          <div class="label">Phone</div>         <div id="client_phone"></div>
+          <div class="label">Email</div>         <div id="client_email"></div>
+          <div class="label">Work</div>          <div id="invoice_description"></div>
         </div>
       </div>
 
+      <!-- RIGHT: Company (same formatting/size as client) -->
       <div>
-        <div class="brand" style="margin-bottom:8px">
+        <div class="brand" style="margin-bottom:6px">
           <div class="logo-box" id="from_logo_box">LOGO</div>
-          <div>
-            <div class="title" id="from_name"></div>
-            <div class="label" id="from_business_no"></div>
-            <div class="label" id="from_address"></div>
-            <div class="label">Phone: <span id="from_phone"></span></div>
-            <div class="label">Email: <span id="from_email"></span></div>
-            <div class="label">Web: <span id="from_web"></span></div>
-          </div>
+          <div class="title" id="from_name"></div> <!-- ONLY this stays as a title -->
         </div>
 
         <div class="meta">
-          <div class="label">Bank</div> <div id="bank_name"></div>
-          <div class="label">Acc Name</div> <div id="bank_acc_name"></div>
-          <div class="label">Acc No.</div> <div id="bank_acc_no"></div>
-          <div class="label">Routing</div> <div id="bank_routing"></div>
+          <div class="label">Business N.</div>   <div id="from_business_no"></div>
+          <div class="label">Address</div>       <div id="from_address"></div>
+          <div class="label">Phone</div>         <div id="from_phone"></div>
+          <div class="label">Email</div>         <div id="from_email"></div>
+          <div class="label">Web</div>           <div id="from_web"></div>
+        </div>
+
+        <div class="meta" style="margin-top:10px">
+          <div class="label">Bank</div>          <div id="bank_name"></div>
+          <div class="label">Acc Name</div>      <div id="bank_acc_name"></div>
+          <div class="label">Acc No.</div>       <div id="bank_acc_no"></div>
+          <div class="label">Routing</div>       <div id="bank_routing"></div>
         </div>
       </div>
     </header>
 
-    <!-- Only the title for the items section (no table yet) -->
+    <!-- Items title only -->
     <h3>Description of the Work</h3>
 
     <div class="kpis">
@@ -121,7 +115,7 @@
   </div>
 
   <script>
-    // ------- helpers -------
+    // helpers
     const qp = new URLSearchParams(location.search);
     const get = (k, d='') => qp.get(k) ?? d;
     const ccy = get('ccy','AUD');
@@ -129,22 +123,23 @@
     const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
     const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
 
-    // ------- header -------
+    // header
     const invNum = get('invoice_number','');
     document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
     document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
     fill('invoice_date','invoice_date');
 
-    // ------- client -------
+    // client
     ['client_name','client_business_number','client_phone','client_email','invoice_description']
       .forEach(k => fill(k,k));
 
-    // ------- company + bank -------
-    ['from_name','from_business_no','from_address','from_phone','from_email','from_web',
+    // company + bank (values are normal text, same as client)
+    ['from_business_no','from_address','from_phone','from_email','from_web',
      'bank_name','bank_acc_name','bank_acc_no','bank_routing']
       .forEach(k => fill(k,k));
+    fill('from_name','from_name');
 
-    // logo (optional)
+    // logo
     const logo = get('from_logo','');
     if (logo) {
       const box = document.getElementById('from_logo_box');
@@ -152,7 +147,7 @@
       box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;">`;
     }
 
-    // ------- totals -------
+    // totals
     let subtotal = clean(get('subtotal',''));
     let taxRate = get('tax_rate','');
     taxRate = taxRate === '' ? '' : Number(taxRate);
@@ -173,7 +168,7 @@
     const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
     if (signer) document.getElementById('signer').textContent = signer;
 
-    // auto-print on load (optional)
+    // auto-print
     window.addEventListener('load', () => { try { setTimeout(() => window.print(), 0); } catch {} });
   </script>
 </body>
