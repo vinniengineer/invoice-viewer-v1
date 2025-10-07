@@ -14,25 +14,34 @@
     body{
       margin:0; background:var(--bg); color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      font-size:14px;
     }
     .sheet{ max-width:1024px; margin:20px auto; padding:20px; }
     header{ display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start }
-    .title{ font-weight:700; font-size:28px; margin:0 0 6px }
-    .date{ color:var(--muted); font-size:13px; }
-    .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:14px }
+    .title{ font-weight:700; font-size:24px; margin:0 0 6px }   /* smaller */
+    .date{ color:var(--muted); font-size:12px; }
+    .meta{ display:grid; grid-template-columns:auto 1fr; column-gap:10px; row-gap:6px; font-size:13px } /* smaller */
     .label{ color:var(--muted) }
-    .brand{ display:flex; gap:12px; align-items:center; }
-    .logo-box{ width:64px; height:64px; border-radius:12px; background:#eef2ff; display:grid; place-items:center; font-weight:700; color:#1d4ed8 }
-    h3{ margin:26px 0 10px; font-size:20px }
-    .kpis{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px }
-    .totals{ display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-top:12px }
-    .card{ border:1px solid var(--line); border-radius:12px; padding:14px; background:#fafafa }
+    .brand{ display:flex; gap:10px; align-items:center; }
+    .logo-box{ width:56px; height:56px; border-radius:12px; background:#eef2ff; display:grid; place-items:center; font-weight:700; color:#1d4ed8 }
+    .company-name{ font-weight:700; font-size:18px; margin:0 } /* decreased */
+    h3{ margin:24px 0 10px; font-size:18px }
+
+    /* Cards / totals */
+    .card{ border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:#fafafa }
     .card h4{ margin:0 0 6px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em }
-    .value{ font-size:20px; font-weight:700 }
-    .footer{ display:grid; grid-template-columns:1fr 240px; gap:16px; align-items:end; margin-top:12px }
-    .thanks{ justify-self:end; color:var(--muted); font-weight:600 }
-    .signature{ border:1px dashed var(--line); border-radius:12px; height:160px; display:grid; place-items:center; background:#fff }
-    .signature img{ max-width:92%; max-height:140px; object-fit:contain }
+    .value{ font-size:18px; font-weight:700 }                   /* a bit smaller */
+
+    .totals2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px }
+    .stack{ display:grid; gap:16px }                            /* left column: subtotal then taxes */
+    .tall{ display:grid; align-content:center; row-gap:6px }    /* right column: total only */
+
+    /* Footer: signature under "Thank you!" */
+    .footer{ display:grid; justify-items:center; margin-top:16px; row-gap:10px }
+    .thanks{ color:var(--muted); font-weight:600 }
+    .signature{ border:1px dashed var(--line); border-radius:10px; height:84px; width:240px; display:grid; place-items:center; background:#fff }
+    .signature img{ max-width:92%; max-height:70px; object-fit:contain } /* forces smaller image */
+    .signer{ font-size:12px; color:var(--muted); text-align:center }
 
     /* PRINT sizing */
     @page { size: A4; margin: 16mm; }
@@ -52,18 +61,18 @@
         <h1 class="title" id="inv_title">Invoice</h1>
         <div class="meta" style="margin-top:8px">
           <div class="label">Client</div>        <div id="client_name"></div>
-          <div class="label">ABN / ID</div>      <div id="client_business_number"></div>
+          <div class="label">Business N.</div>    <div id="client_business_number"></div>
           <div class="label">Phone</div>         <div id="client_phone"></div>
           <div class="label">Email</div>         <div id="client_email"></div>
           <div class="label">Work</div>          <div id="invoice_description"></div>
         </div>
       </div>
 
-      <!-- RIGHT: Company (same formatting/size as client) -->
+      <!-- RIGHT: Company -->
       <div>
         <div class="brand" style="margin-bottom:6px">
           <div class="logo-box" id="from_logo_box">LOGO</div>
-          <div class="title" id="from_name"></div> <!-- ONLY this stays as a title -->
+          <div class="company-name" id="from_name"></div> <!-- smaller company name -->
         </div>
 
         <div class="meta">
@@ -86,36 +95,35 @@
     <!-- Items title only -->
     <h3>Description of the Work</h3>
 
-    <div class="kpis">
-      <div class="card">
-        <h4>Subtotal Invoice</h4>
-        <div class="value" id="subtotal">$0.00</div>
+    <!-- Totals: left stack (subtotal + taxes), right single (total) -->
+    <div class="totals2">
+      <div class="stack">
+        <div class="card">
+          <h4>Subtotal Invoice</h4>
+          <div class="value" id="subtotal">$0.00</div>
+        </div>
+        <div class="card">
+          <h4>Taxes <span id="tax_rate_label"></span></h4>
+          <div class="value" id="taxes">$0.00</div>
+        </div>
       </div>
-      <div class="card">
-        <h4>Taxes</h4>
-        <div class="value"><span id="taxes">$0.00</span> <span class="label" id="tax_rate_label"></span></div>
-      </div>
-    </div>
 
-    <div class="totals">
-      <div></div>
-      <div class="card">
+      <div class="card tall">
         <h4>Total Invoice</h4>
         <div class="value" id="grand_total">$0.00</div>
       </div>
     </div>
 
+    <!-- Footer: centered; signature below "Thank you!" -->
     <div class="footer">
       <div class="thanks">Thank you!</div>
-      <div>
-        <div class="signature"><img id="signature" alt=""></div>
-        <div class="label" id="signer" style="text-align:right; margin-top:8px;"></div>
-      </div>
+      <div class="signature"><img id="signature" alt=""></div>
+      <div class="signer" id="signer"></div>
     </div>
   </div>
 
   <script>
-    // helpers
+    // Helpers
     const qp = new URLSearchParams(location.search);
     const get = (k, d='') => qp.get(k) ?? d;
     const ccy = get('ccy','AUD');
@@ -123,23 +131,22 @@
     const money = n => Number(n||0).toLocaleString(undefined,{style:'currency',currency:ccy});
     const fill = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = get(key,''); };
 
-    // header
+    // Header
     const invNum = get('invoice_number','');
     document.getElementById('inv_title').textContent = invNum ? `Invoice ${invNum}` : 'Invoice';
     document.title = invNum ? `Invoice ${invNum}` : 'Invoice';
     fill('invoice_date','invoice_date');
 
-    // client
+    // Client
     ['client_name','client_business_number','client_phone','client_email','invoice_description']
       .forEach(k => fill(k,k));
 
-    // company + bank (values are normal text, same as client)
-    ['from_business_no','from_address','from_phone','from_email','from_web',
+    // Company + bank
+    ['from_name','from_business_no','from_address','from_phone','from_email','from_web',
      'bank_name','bank_acc_name','bank_acc_no','bank_routing']
       .forEach(k => fill(k,k));
-    fill('from_name','from_name');
 
-    // logo
+    // Logo
     const logo = get('from_logo','');
     if (logo) {
       const box = document.getElementById('from_logo_box');
@@ -147,7 +154,7 @@
       box.innerHTML = `<img src="${logo}" alt="logo" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;">`;
     }
 
-    // totals
+    // Totals
     let subtotal = clean(get('subtotal',''));
     let taxRate = get('tax_rate','');
     taxRate = taxRate === '' ? '' : Number(taxRate);
@@ -162,13 +169,13 @@
     document.getElementById('tax_rate_label').textContent = (taxRate||taxRate===0)?`(${(taxRate*100).toFixed(0)}%)`:'';
     document.getElementById('grand_total').textContent = money(grand);
 
-    // signature
+    // Signature
     const sig = get('signature','');
     if (sig) document.getElementById('signature').src = sig;
     const signer = [get('signer_name',''), get('signer_role','')].filter(Boolean).join(' · ');
     if (signer) document.getElementById('signer').textContent = signer;
 
-    // auto-print
+    // Auto-print on load (optional)
     window.addEventListener('load', () => { try { setTimeout(() => window.print(), 0); } catch {} });
   </script>
 </body>
