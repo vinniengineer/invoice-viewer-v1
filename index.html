@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body style="font-family: Arial, sans-serif; line-height:1.6; margin:16px;">
+  <div id="cname">Client: </div>
+  <div id="cabn">ABN / ID: </div>
+  <div id="cphone">Phone: </div>
+  <div id="cemail">Email: </div>
+  <div id="cwork">Work: </div>
+
+  <script>
+    // Read values from the URL, e.g. ?client_name=Vini&client_phone=+61...
+    const q = new URLSearchParams(location.search);
+    const set = (id, key) => {
+      const el = document.getElementById(id);
+      const v = q.get(key) || "";
+      if (v) el.innerHTML += v;
+    };
+
+    set("cname",  "client_name");
+    set("cabn",   "client_business_number");
+    set("cphone", "client_phone");
+    set("cemail", "client_email");
+    set("cwork",  "invoice_description");
+
+    const inv = q.get("invoice_number");
+    if (inv) document.title = "Invoice " + inv;
+  </script>
+</body>
+</html>
