@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Invoice</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body style="font-family: Arial, sans-serif; line-height:1.6; margin:16px;">
   <div id="cname">Client: </div>
@@ -13,29 +13,31 @@
   <div id="cwork">Work: </div>
 
   <script>
-    // Read values from the URL, e.g. ?client_name=Vini&client_phone=+61...
+    // Fill from URL params
     const q = new URLSearchParams(location.search);
     const set = (id, key) => {
       const el = document.getElementById(id);
       const v = q.get(key) || "";
-      if (v) el.innerHTML += v;
+      if (v) el.textContent = el.textContent + v;
     };
-
-    set("cname",  "client_name");
-    set("cabn",   "client_business_number");
-    set("cphone", "client_phone");
-    set("cemail", "client_email");
-    set("cwork",  "invoice_description");
+    set("cname","client_name");
+    set("cabn","client_business_number");
+    set("cphone","client_phone");
+    set("cemail","client_email");
+    set("cwork","invoice_description");
 
     const inv = q.get("invoice_number");
     if (inv) document.title = "Invoice " + inv;
   </script>
 
+  <!-- Auto-print on load -->
   <script>
-  window.addEventListener('load', () => {
-    try { window.print(); } catch {}
-  });
-</script>
-
+    (function () {
+      function go() { try { window.print(); } catch(e) {} }
+      if (document.readyState === "complete") setTimeout(go, 0);
+      else window.addEventListener("load", () => setTimeout(go, 0));
+    })();
+  </script>
 </body>
 </html>
+
